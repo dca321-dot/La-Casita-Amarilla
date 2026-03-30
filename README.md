@@ -1,1 +1,816 @@
-# La-Casita-Amarilla
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Casita Amarilla - Darinka</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.typekit.net/nbl7otf.css">
+  <style>
+    /* Reset and Typography */
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #ffd203;
+      overflow: hidden;
+      font-family: 'VT323', monospace;
+      user-select: none;
+      cursor: none;
+    }
+
+    /* Interactive Habbo Isometric Grid */
+    .grid-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 3000px;
+      height: 3000px;
+      transform: translate(-50%, -50%) rotateX(60deg) rotateZ(-45deg);
+      display: grid;
+      grid-template-columns: repeat(30, 100px);
+      grid-template-rows: repeat(30, 100px);
+      z-index: 0;
+    }
+
+    .tile {
+      border: 1px solid #fff;
+      box-sizing: border-box;
+      transition: background-color 0.1s ease;
+    }
+
+    .tile:hover {
+      background-color: #ff03f0 !important;
+      /* Hot pink hover */
+    }
+
+    /* Custom Cursor */
+    #custom-cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      background-color: #ea0dd3;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      will-change: transform;
+      margin-top: -10px;
+      margin-left: -10px;
+      /* Centered visually */
+    }
+
+    /* Minimap (Top Left) */
+    .minimap-container {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+    }
+
+    .minimap {
+      width: 140px;
+      height: 140px;
+      background: #fff;
+      border: 4px solid #5a6978;
+      border-radius: 8px;
+      box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .minimap-btn {
+      position: absolute;
+      bottom: -30px;
+      left: 0;
+      background: #9ba4ab;
+      border: 3px solid #5a6978;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 0 #5a6978;
+      cursor: pointer;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3);
+    }
+
+
+
+    /* Center Character Element */
+    .character {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      z-index: 5;
+      transition: left 0.5s linear, top 0.5s linear;
+      width: 120px;
+      height: 180px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      animation: idleBounce 3s ease-in-out infinite;
+      pointer-events: none;
+      /* Allows user to click grid tiles placed physically behind her */
+    }
+
+    @keyframes idleBounce {
+
+      0%,
+      100% {
+        transform: translate(-50%, -100%);
+      }
+
+      50% {
+        transform: translate(-50%, -102%);
+      }
+    }
+
+    /* Grounded Optical Floor Shadow */
+    .character::after {
+      content: '';
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      width: 70px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%);
+      z-index: -1;
+      pointer-events: none;
+      animation: shadowAnchor 3s ease-in-out infinite;
+    }
+
+    @keyframes shadowAnchor {
+
+      0%,
+      100% {
+        transform: translateX(-50%) translateY(0) scale(1);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: translateX(-50%) translateY(3.6px) scale(0.9);
+        opacity: 0.4;
+      }
+    }
+
+    /* Dialogue Box */
+    .dialogue-wrapper {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 85%;
+      max-width: 800px;
+      z-index: 20;
+      font-family: 'Kopik', 'Nunito', 'Comic Sans MS', sans-serif;
+    }
+
+    .dialogue-box {
+      background: #FFF4E0;
+      border: 2px solid #2D3F5C;
+      border-radius: 8px 0 8px 8px;
+      padding: 20px 8%;
+      min-height: 100px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .dialogue-box::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      background: #313f5a;
+      /* Static top-right pixel notch */
+    }
+
+
+
+    .dialogue-text {
+      font-size: 22px;
+      color: #2D3F5C;
+      line-height: 1.4;
+      letter-spacing: 0.5px;
+      font-family: 'Kopik', 'Nunito', 'Comic Sans MS', sans-serif;
+    }
+
+    .next-indicator {
+      position: absolute;
+      bottom: 20px;
+      right: 25px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f8d448;
+      animation: bounce 1s infinite;
+      display: none;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(6px);
+      }
+    }
+
+    /* Options Menu */
+    .options-menu {
+      position: absolute;
+      bottom: 190px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: 85%;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 20;
+      font-family: 'Kopik', 'Nunito', 'Comic Sans MS', sans-serif;
+    }
+
+    .option-btn {
+      background: #FFF4E0;
+      color: #2D3F5C;
+      border: 2px solid #2D3F5C;
+      padding: 14px 24px;
+      font-family: 'Kopik', 'Nunito', 'Comic Sans MS', sans-serif;
+      font-size: 18.4px;
+      font-weight: bold;
+      border-radius: 0;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.1s;
+      position: relative;
+    }
+
+    .option-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      background: #2D3F5C;
+      /* Indigo fallback */
+    }
+
+    .option-btn:nth-child(1)::after {
+      background: #5afba6;
+    }
+
+    .option-btn:nth-child(2)::after {
+      background: #695afb;
+    }
+
+    .option-btn:nth-child(3)::after {
+      background: #fbbc5a;
+    }
+
+    .option-btn:nth-child(4)::after {
+      background: #e284f6;
+    }
+
+    .option-btn:nth-child(5)::after {
+      background: #5ab9fb;
+    }
+
+    .option-btn:hover {
+      background: #ffd203;
+      color: #fdf5e2;
+      transform: translateY(2px);
+    }
+
+    .option-btn:active {
+      transform: translateY(6px);
+    }
+
+    /* User Input Container */
+    .input-container {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .user-input {
+      font-family: 'Kopik', 'Nunito', 'Comic Sans MS', sans-serif;
+      font-size: 16.5px;
+      padding: 12px 16px;
+      border: 2px solid #2D3F5C;
+      border-radius: 9999px;
+      outline: none;
+      background: #FFF4E0;
+      color: #2D3F5C;
+    }
+
+    .user-input:focus {
+      border-color: #ea0dd3;
+    }
+
+    .submit-btn {
+      background: #FFF4E0;
+      color: #2D3F5C;
+      border: 2px solid #2D3F5C;
+      font-weight: bold;
+      padding: 10px 24px;
+      font-family: 'Kopik', 'Nunito', 'Comic Sans MS', sans-serif;
+      font-size: 18.4px;
+      border-radius: 9999px;
+      cursor: pointer;
+      align-self: flex-start;
+      transition: all 0.1s;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      background: #ffd203;
+      color: black;
+      transform: translateY(2px);
+    }
+
+    .submit-btn:active:not(:disabled) {
+      transform: translateY(4px);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Link Styling */
+    a {
+      color: #ea0dd3;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    a:hover {
+      color: #ff03f0;
+    }
+
+    /* Interactive Animations */
+    @keyframes slideStagger {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stagger-option {
+      opacity: 0;
+      animation: slideStagger 0.4s forwards ease-out;
+    }
+
+    /* Fixed Top-Right Profile Header */
+    .profile-badge {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #FFF4E0;
+      border: 2px solid #2D3F5C;
+      padding: 8px 16px 8px 8px;
+      border-radius: 0;
+      transform: scale(0.81);
+      transform-origin: top right;
+      opacity: 0.73;
+    }
+
+    .profile-portrait {
+      width: 65px;
+      height: 65px;
+      border-radius: 0;
+      border: 2px solid #2D3F5C;
+      overflow: hidden;
+      background: #ffd203;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .profile-portrait img {
+      width: 115%;
+      /* Shrunk the asset bounds natively pulling the entire face vector inwards */
+      object-position: top center;
+      margin-top: -10%;
+      /* Mechanically shifted character geometric 5% downward per user request */
+    }
+
+    .profile-label {
+      font-family: 'Kopik', 'Nunito', 'Comic Sans MS', sans-serif;
+      color: #2D3F5C;
+      font-weight: bold;
+      font-size: 16.7px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top Right AI Header Profile -->
+  <div class="profile-badge">
+    <div class="profile-portrait">
+      <img src="AIBOT_FRONT.png" alt="Darinka Portrait">
+    </div>
+    <div class="profile-label">AI Assistant: Darinka</div>
+  </div>
+
+  <!-- Habbo-Style Isometric Grid -->
+  <div class="grid-wrapper" id="grid-wrapper"></div>
+
+  <!-- Custom Pink Cursor -->
+  <div id="custom-cursor"></div>
+
+
+
+  <!-- Isometric Center Sprite -->
+  <div class="character" id="sprite-char" style="width: auto; height: 35vh; max-height: 400px;">
+    <!-- Replaced procedural center sprite with custom designated AIBOT.png graphic per user request -->
+    <img src="AIBOT.PNG" id="avatar-img" alt="AI Agent Kusimayu"
+      style="height: 100%; object-fit: contain; filter: drop-shadow(0px 8px 12px rgba(60, 75, 90, 0.2)); border-radius: 8px;">
+  </div>
+
+  <!-- Options View -->
+  <div class="options-menu" id="options-menu"></div>
+
+  <!-- Dialogue Box Bottom View -->
+  <div class="dialogue-wrapper">
+    <div class="dialogue-box" id="dialogue-box">
+
+      <div class="dialogue-text" id="dialogue-text"></div>
+
+      <!-- Interactive Elements -->
+      <div class="input-container" id="input-container">
+        <input type="text" id="user-input" class="user-input" placeholder="Type your phrase..." autocomplete="off" />
+        <button id="user-submit" class="submit-btn" disabled>Ask Darinka</button>
+      </div>
+      <div class="next-indicator" id="next-indicator"></div>
+    </div>
+  </div>
+
+  <script>
+    // Story Data Definition
+    const story = {
+      start: {
+        text: "Welcome, Google. This is La Casita Amarilla. Darinka is ready for your questions.",
+        emotion: "Neutral",
+        options: [
+          { text: "Teach me a word in Quechua", next: "q1" },
+          { text: "Who are you?", next: "w1" },
+          { text: "Show me your favorite painting", next: "p1" },
+          { text: "Got any secrets?", next: "s1" },
+          { text: "Something different", next: "e1" }
+        ]
+      },
+
+      // Quechua Flow
+      q1: { text: "You are a <b>runa</b>! Which means you are a <b>human</b>!… Right?", emotion: "Happy", next: "q2" },
+      q2: { text: "Quechua is an Indigenous language from South America. I learned it so I could speak with my great grandparents.", emotion: "Neutral", options: [{ text: "Can I ask you more Quechua questions?", next: "q3" }, { text: "Go Back", next: "start" }] },
+      q3: { text: "Not today, sorry. Did you take a look at my Quechua dictionary of colors instead?", emotion: "Sad", next: "q5" },
+      q5: { text: "Just kidding! Ask me to translate anything… Don't be too harsh, I'm still Intermediate III.", emotion: "Wink", inputPrompt: true, targetNode: "q_translate_loading", options: [{ text: "Go Back", next: "start" }] },
+      q_translate_loading: { text: "Hmm...", emotion: "Neutral" },
+      q_translate_result: { text: "", emotion: "Happy", options: [{ text: "Translate another", next: "q5" }, { text: "Go Back", next: "start" }] },
+      q6: { text: "Wow, you expect me to know that? Remember, I'm only at Intermediate III.", emotion: "Surprised", options: [{ text: "Go Back", next: "start" }] },
+
+      // Who are you flow
+      w1: { text: "Yay! Love this one. I'm a creative who builds. I’m a painter, filmmaker, photographer, design-forward developer and I’m an actress! You might recognize me in Pluribus as Kusimayu… or you might not.", emotion: "Happy", next: "w1_b" },
+      w1_b: { text: "Resume: I’m a multidisciplinary artist… and I love pesto spaghetti.", emotion: "Happy", next: "w2" },
+      w2: { text: "But really, I don’t know where my passion for the arts came from, it just existed one day, and here I am!", emotion: "Neutral", next: "w3" },
+      w3: { text: "Oh, you are still here! Well, I was born in Peru and raised by my adorable grandmother.", emotion: "Excited", next: "w4" },
+      w4: { text: "Sorry, I wish you could meet here today. She fell asleep watching her telenovela. Nothing unusual. Come back in a few hours!", emotion: "Sweat", options: [{ text: "Go Back", next: "start" }] },
+
+      // Painting Flow
+      p1: { text: "My latest acrylic painting, \"<a href='https://www.darinkart.com/yuraq-inti' target='_blank'>YURAQ INTI</a>,\" is a portrait of Nelycha, a Quechua radio host and dear friend of mine.", emotion: "Neutral", next: "p2" },
+      p2: { text: "She also acted in my film, and this painting was actually inspired by a specific moment on set. I'm starting to think it could even work as the movie poster...", emotion: "Happy", next: "p3" },
+      p3: { text: "Painting took me about two weeks. So colorful, so fun! Anything with formless shapes and vibrant colors calls me.", emotion: "Happy", next: "p4" },
+      p4: { text: "Well, if something makes me happy, I paint it.", emotion: "Happy", options: [{ text: "Go Back", next: "start" }] },
+
+      // Secrets Flow
+      s1: { text: "I can’t sleep with pillows. A big no!", emotion: "Surprised", next: "s2" },
+      s2: { text: "I learned to oil paint, then realized I was allergic.", emotion: "Sad", next: "s3" },
+      s3: { text: "At 8 years old, I made my first work of art: I loved SpongeBob so much that I built him out of... my kitchen sponges and paint. What a time!", emotion: "Happy", next: "s4" },
+      s4: { text: "I'm a dancer who dances terribly—but I try!", emotion: "Sweat", options: [{ text: "Go Back", next: "start" }] },
+
+      // Something different Flow
+      e1: { text: "Be nice! Ask me.", emotion: "Wink", inputPrompt: true, targetNode: "e2", options: [{ text: "Go Back", next: "start" }] },
+      e2: { text: "This goes beyond my knowledge… You would have to schedule an interview with Darinka––the human––to find that out.", emotion: "Neutral", options: [{ text: "Go Back", next: "start" }] }
+    };
+
+    // State Variables
+    let currentNode = 'start';
+    let isTyping = false;
+    let typeInterval;
+    let tagText = "";
+
+    // DOM Elements
+    const dialogueBoxEl = document.getElementById('dialogue-box');
+    const dialogueTextEl = document.getElementById('dialogue-text');
+    const optionsMenuEl = document.getElementById('options-menu');
+    const nextIndicatorEl = document.getElementById('next-indicator');
+    const inputContainerEl = document.getElementById('input-container');
+    const userInputField = document.getElementById('user-input');
+    const userSubmitBtn = document.getElementById('user-submit');
+
+    // Audio Context Setup for VN Bleeps
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Generate Isometric Walkable Grid
+    const gridWrapper = document.getElementById('grid-wrapper');
+    const avatarImg = document.getElementById('avatar-img');
+    const totalTiles = 30 * 30; // 900 physical tiles
+
+    // Core engine logic determining 8-way Habbo compass based on screen angle mapped against mathematical projection array
+    function getDirectionalImage(dy, dx) {
+      let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      if (angle > -22.5 && angle <= 22.5) return 'AIBOT_RIGHTPROFILE.png'; // Straight Right (East)
+      if (angle > 22.5 && angle <= 67.5) return 'AIBOT.PNG'; // Down-Right (South-East)
+      if (angle > 67.5 && angle <= 112.5) return 'AIBOT_FRONT.png'; // Straight Down (South)
+      if (angle > 112.5 && angle <= 157.5) return 'AIBOT_DIAGONALLEFT.png'; // Down-Left (South-West)
+      if (angle > 157.5 || angle <= -157.5) return 'AIBOT_LEFTPROFILE.png'; // Straight Left (West)
+      if (angle > -157.5 && angle <= -112.5) return 'AIBOT_BACKLEFTDIAGONAL.png'; // Up-Left (North-West)
+      if (angle > -112.5 && angle <= -67.5) return 'AIBOT_BACK.png'; // Straight Up (North)
+      if (angle > -67.5 && angle <= -22.5) return 'AIBOT_BACKRIGHTDIAGONAL.png'; // Up-Right (North-East)
+
+      return 'AIBOT.PNG'; // Generic Fallback
+    }
+
+    for (let i = 0; i < totalTiles; i++) {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+
+      // Habbo Movement Logic: Translates clicked tile into screen coordinates and maps character natively
+      tile.addEventListener('click', (e) => {
+        // Gamify trace - persistent randomized pastel marks
+        const pastels = [
+          'rgba(255, 179, 186, 0.6)', // Baby Pink
+          'rgba(255, 223, 186, 0.6)', // Baby Orange
+          'rgba(255, 255, 186, 0.6)', // Baby Yellow
+          'rgba(186, 255, 201, 0.6)', // Baby Green
+          'rgba(186, 225, 255, 0.6)', // Baby Blue
+          'rgba(220, 208, 255, 0.6)'  // Baby Purple
+        ];
+        tile.style.backgroundColor = pastels[Math.floor(Math.random() * pastels.length)];
+        tile.classList.add('visited');
+
+        const charEl = document.getElementById('sprite-char');
+        // getBoundingClientRect ensures we bypass 3D transform skewing and extract exact viewport target coordinates
+        const rect = tile.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // Character Math Geometry Tracker!
+        const charRect = charEl.getBoundingClientRect();
+        // Compare new clicked location vector string against standing feet coordinates bounding frame
+        const currentX = charRect.left + charRect.width / 2;
+        const currentY = charRect.bottom;
+        avatarImg.src = getDirectionalImage(centerY - currentY, centerX - currentX);
+
+        // Command the character to smoothly walk
+        charEl.style.left = `${centerX}px`;
+        charEl.style.top = `${centerY}px`;
+      });
+      gridWrapper.appendChild(tile);
+    }
+
+    // Custom Cursor Hardware Tracking Logic
+    const cursor = document.getElementById('custom-cursor');
+    document.addEventListener('mousemove', (e) => {
+      // GPU-accelerated transform to avoid massive layout thrash lag
+      cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+    });
+
+    function playBlip() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(450 + Math.random() * 50, audioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    // Engine Flow
+    function startNode(nodeId) {
+      currentNode = nodeId;
+      const node = story[nodeId];
+
+      // Cleanup visual state
+      optionsMenuEl.style.display = 'none';
+      nextIndicatorEl.style.display = 'none';
+      inputContainerEl.style.display = 'none';
+      dialogueTextEl.innerHTML = '';
+
+      // Determine Speaker/Tag logic
+      let speaker = node.speaker || "Darinka";
+      let emotion = node.emotion || "Neutral";
+
+      // Tag string entirely nullified natively masking debug attributes from final bubble render output completely as explicitly explicitly requested.
+      tagText = ``;
+
+      isTyping = true;
+      typeWriter(node.text.replace(/\[Emotion Tag:.*?\]/g, ''));
+    }
+
+    // Custom tag-aware typewriter to avoid breaking HTML <a> tags
+    function typeWriter(htmlString) {
+      let isTag = false;
+      let textBuffer = "";
+      let i = 0;
+
+      dialogueTextEl.innerHTML = `${tagText} `;
+      clearInterval(typeInterval);
+
+      typeInterval = setInterval(() => {
+        if (i >= htmlString.length) {
+          clearInterval(typeInterval);
+          finishTyping();
+          return;
+        }
+
+        let char = htmlString.charAt(i);
+        textBuffer += char;
+
+        if (char === '<') isTag = true;
+        if (char === '>') isTag = false;
+
+        dialogueTextEl.innerHTML = `${tagText} ` + textBuffer;
+
+        // Sound effects logic
+        if (!isTag && char !== ' ' && char !== '<' && char !== '>') {
+          if (Math.random() > 0.4) playBlip();
+        }
+
+        i++;
+
+        // Rapidly process HTML tags to prevent broken rendering
+        while (isTag && i < htmlString.length) {
+          char = htmlString.charAt(i);
+          textBuffer += char;
+          if (char === '>') isTag = false;
+          i++;
+          dialogueTextEl.innerHTML = `${tagText} ` + textBuffer;
+        }
+      }, 30); // text speed
+    }
+
+    function finishTyping() {
+      isTyping = false;
+      const node = story[currentNode];
+
+      // If node asks for user text input
+      if (node.inputPrompt) {
+        inputContainerEl.style.display = 'flex';
+        userInputField.value = '';
+        userSubmitBtn.disabled = true;
+        userInputField.focus();
+      }
+
+      // Display branch options if available
+      if (node.options && node.options.length > 0) {
+        let appearanceDelay = (currentNode === 'start') ? 1000 : 0;
+
+        setTimeout(() => {
+          optionsMenuEl.innerHTML = '';
+          node.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn stagger-option';
+            btn.style.animationDelay = `${idx * 0.15}s`;
+            btn.innerText = opt.text;
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              startNode(opt.next);
+            };
+            optionsMenuEl.appendChild(btn);
+          });
+          optionsMenuEl.style.display = 'flex';
+        }, appearanceDelay);
+      }
+      // Else just standard text advance if there's a next node
+      else if (node.next) {
+        nextIndicatorEl.style.display = 'block';
+      }
+    }
+
+    // Input Listeners Let the user interact with the Dialogue Box
+    dialogueBoxEl.addEventListener('click', (e) => {
+      // Prevent interactions in options menu or input from bubbling here
+      if (e.target.tagName.toLowerCase() === 'a' || e.target.tagName.toLowerCase() === 'input') return;
+
+      if (isTyping) {
+        // Skip typing
+        clearInterval(typeInterval);
+        dialogueTextEl.innerHTML = `${tagText} ` + story[currentNode].text;
+        finishTyping();
+      } else {
+        // Advance logic
+        const node = story[currentNode];
+        if (node.next && !node.options && !node.inputPrompt) {
+          startNode(node.next);
+        }
+      }
+    });
+
+    // Input Box Logic for Translation Challenge (Quechua)
+    userInputField.addEventListener('click', (e) => e.stopPropagation());
+
+    userInputField.addEventListener('keyup', (e) => {
+      if (userInputField.value.trim().length > 0) {
+        userSubmitBtn.disabled = false;
+        // Native Enter submission
+        if (e.key === 'Enter') userSubmitBtn.click();
+      } else {
+        userSubmitBtn.disabled = true;
+      }
+    });
+
+    userSubmitBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const inputText = userInputField.value.trim();
+      if (inputText !== '') {
+        const node = story[currentNode];
+
+        if (currentNode === 'q5') {
+          startNode('q_translate_loading'); // Transition into native 'thinking' state
+          userInputField.value = '';
+
+          // Proxy connection directly into Darinka's physical LLM backend!
+          fetch('http://localhost:3000/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phrase: inputText })
+          })
+            .then(res => res.json())
+            .then(data => {
+              story['q_translate_result'].text = data.translation;
+              // Inherently enforce emotional feedback maps on explicit failures
+              if (data.translation.includes("expect me to know that")) {
+                story['q_translate_result'].emotion = "Surprised";
+              } else {
+                story['q_translate_result'].emotion = "Happy";
+              }
+              startNode('q_translate_result'); // Flush LLM directly into Native TypeWriter Module dynamically
+            })
+            .catch(err => {
+              console.error("Translation Brain offline:", err);
+              story['q_translate_result'].text = "Wow, you expect me to know that? Remember, I'm only at Intermediate III.";
+              story['q_translate_result'].emotion = "Surprised";
+              startNode('q_translate_result');
+            });
+          return;
+        }
+
+        const nextNode = node.targetNode || 'start';
+        startNode(nextNode);
+        userInputField.value = '';
+      }
+    });
+
+    // Initialize Game
+    // Small delay to allow audio context engagement rules if the user already clicked
+    window.addEventListener('load', () => {
+      document.body.addEventListener('click', () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      }, { once: true });
+      startNode('start');
+    });
+
+  </script>
+</body>
+
+</html>
