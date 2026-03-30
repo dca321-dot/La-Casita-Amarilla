@@ -164,7 +164,8 @@
 
   <div class="aspect-container">
     <!-- BASE LAYER: Neutral blue faces maintained permanently in the DOM -->
-    <img src="Base_WithBlue.png" class="layer base-image" id="primary-base-img" alt="Base visual">
+    <a href="home.html">
+      <img src="Base_WithBlue.png" class="layer base-image" id="primary-base-img" alt="Base visual">
 
     <!-- FAST PRE-LOADED OVERLAYS: Totally unclipped images driven purely by opacity toggles -->
     <!-- This forcefully caches the large images in RAM to completely eradicate the mouse decode lag -->
@@ -174,10 +175,8 @@
     <img src="Bottom.png" id="img-bot" class="layer unclipped-overlay" alt="Bot Overlay">
     <img src="Bottom_Left.png" id="img-bl" class="layer unclipped-overlay" alt="BL Overlay">
     <img src="Top_Left.png" id="img-tl" class="layer unclipped-overlay" alt="TL Overlay">
-    <a href="home.html" style="position: relative; z-index: 9999;">
    <img src="Base_WithSmile.png" alt="Center Overlay">
 </a>
-
     <!-- INVISIBLE INTERACTION HITBOXES -->
     <!-- Expanded by 4% to ensure zones like Top_Right are consistently caught by the cursor -->
     <div class="hitbox" id="hit-top" style="top: 6%; left: 40%; width: 20%; height: 22%;"></div>
