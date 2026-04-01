@@ -858,46 +858,40 @@
     });
 
     userSubmitBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const inputText = userInputField.value.trim();
-      if (inputText !== '') {
-        const node = story[currentNode];
+  e.stopPropagation();
+  const inputText = userInputField.value.trim();
+  if (inputText !== '') {
+    if (currentNode === 'q5') {
+      startNode('q_translate_loading'); 
+      userInputField.value = '';
 
-        if (currentNode === 'q5') {
-          startNode('q_translate_loading'); // Transition into native 'thinking' state
-          userInputField.value = '';
+      fetch('https://darinka-brain-1.onrender.com/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phrase: inputText })
+      })
+      .then(res => res.json())
+      .then(data => {
+        story['q_translate_result'].text = data.translation;
+        
+        // Simple logic to change emotion based on response length or content
+        story['q_translate_result'].emotion = data.translation.length > 100 ? "Surprised" : "Happy";
+        
+        startNode('q_translate_result'); 
+      })
+      .catch(err => {
+        console.error("Brain offline:", err);
+        story['q_translate_result'].text = "I'm having trouble connecting to my brain… I’m so sorry! I’m off to refuel—back shortly!”;
+        startNode('q_translate_result');
+      });
+      return;
+    }
 
-          // Proxy connection directly into Darinka's physical LLM backend!
-          fetch('http://localhost:3000/api/translate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phrase: inputText })
-          })
-            .then(res => res.json())
-            .then(data => {
-              story['q_translate_result'].text = data.translation;
-              // Inherently enforce emotional feedback maps on explicit failures
-              if (data.translation.includes("expect me to know that")) {
-                story['q_translate_result'].emotion = "Surprised";
-              } else {
-                story['q_translate_result'].emotion = "Happy";
-              }
-              startNode('q_translate_result'); // Flush LLM directly into Native TypeWriter Module dynamically
-            })
-            .catch(err => {
-              console.error("Translation Brain offline:", err);
-              story['q_translate_result'].text = "Wow, you expect me to know that? Remember, I'm only at Intermediate III.";
-              story['q_translate_result'].emotion = "Surprised";
-              startNode('q_translate_result');
-            });
-          return;
-        }
-
-        const nextNode = node.targetNode || 'start';
-        startNode(nextNode);
-        userInputField.value = '';
-      }
-    });
+    const nextNode = story[currentNode].targetNode || 'start';
+    startNode(nextNode);
+    userInputField.value = '';
+  }
+});
 
     // Initialize Game
     // Small delay to allow audio context engagement rules if the user already clicked
